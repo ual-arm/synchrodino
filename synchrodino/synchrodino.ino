@@ -1,5 +1,14 @@
+/* Project Name: ????
+ * Authors: ????
+ * 
+ * Copyright (C) 2019 - University of Almeria
+ * Licence: GNU GPL v3
+ * 
+ * Compile for:
+ *  Board: ????
+ *  Microcontroller: ????
+ */
 
-/*Begining of Auto generated code by Atmel studio */
 // librerias
 #include <PriUint64.h>
 #include <Arduino.h>
