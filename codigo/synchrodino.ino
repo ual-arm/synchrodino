@@ -141,7 +141,7 @@ void loop() {
   // tronco del programa
   if (Serial1.available() > 0) {
     gps.encode(Serial1.read());
-    
+
     if (gps.date.isUpdated()) {
      uint64_t next_rmc = gpsdatetounixB();
      Serial.print("comprobacionseria2 next=");
@@ -200,7 +200,8 @@ void externa() {
 
 uint64_t gpsdatetounixB(){
 
-int meses[]={31,59,90,120,151,181,212,243,273,304,334,365};
+//                      0  1 2  3  4   5    6   7   8   9  10   11
+const int month2days[]={0,31,59,90,120,151,181,212,243,273,304,334};
 double ano;
 double mes,dias,horas,minutos,segundos;
 uint64_t mili,c;
@@ -216,56 +217,7 @@ uint64_t mili,c;
   mili=x*1000;
 }
 
-uint64_t x=gps.date.month()-1;
-
-if (x==0)
-{
-x=0;
-}
-if (x==1)
-{
-x=meses[0];  
-}
-if (x==2)
-{
-x=meses[1];  
-}
-if (x==3)
-{
-x=meses[2];  
-}
-if (x==4)
-{
-x=meses[3];    
-}
-if (x==5)
-{
-x=meses[4]; 
-}
-if (x==6)
-{
-x=meses[5]; 
-}
-if (x==7)
-{
-x=meses[6];   
-}
-if (x==8)
-{
-x=meses[7];    
-}
-if (x==9)
-{
-x=meses[8]; 
-}
-if (x==10)
-{
-x=meses[9]; 
-}
-if (x==11)
-{
-x=meses[10];   
-}
+uint64_t x= month2days[gps.date.month()-1];
 
 x=x+gps.date.day()-1;
 x=x*24;
