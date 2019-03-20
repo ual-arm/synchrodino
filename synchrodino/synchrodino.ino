@@ -1,12 +1,12 @@
-/* Project Name: ????
- * Authors: ????
+/* Project Name: SYNCHRODINO
+ * Authors: Antonio Gomez Fernandez
  * 
  * Copyright (C) 2019 - University of Almeria
  * Licence: GNU GPL v3
  * 
  * Compile for:
- *  Board: ????
- *  Microcontroller: ????
+ *  Board: Arduino Mega 2560
+ *  Microcontroller: Atmega 2560
  */
 
 // librerias
@@ -24,6 +24,8 @@
 // Beginning of Auto generated function prototypes by Atmel Studio
 // End of Auto generated function prototypes by Atmel Studio
 // el primero es el Rxpin y el segundo es el Txpin
+
+const uint64_t TICKS_PER_SECOND = 10000;
 
 TinyGPSPlus gps;
 // Message uC -> PC
@@ -194,10 +196,11 @@ void pps() {
 void externa() {
   Serial.print("holaexterna\n");
   if (current_rmc != 0) {
+    Serial.print("holaexterna2\n");
     //Serial.print("curent=");
     //Serial.println(PriUint64<DEC>(current_rmc));
     //Serial.println(current_rmc);
-    uint64_t hora = uint64_t(current_rmc)*10000 +  ticks;
+    uint64_t hora = uint64_t(current_rmc)*TICKS_PER_SECOND +  ticks;
     // encolar terminar
     // ESTA ENCOLADO ¿?¿?¿?  AQUI AQUI
     Msg msg;
@@ -211,9 +214,7 @@ uint64_t gpsdatetounixB(){
 
 //                      0  1 2  3  4   5    6   7   8   9  10   11
 const int month2days[]={0,31,59,90,120,151,181,212,243,273,304,334};
-double ano;
-double mes,dias,horas,minutos,segundos;
-uint64_t mili,c;
+uint64_t mili;
 
 
 //los dias
@@ -223,29 +224,19 @@ uint64_t mili,c;
   uint64_t vis=(x/4)-(1970/4);
   x=(gps.date.year()-1970)*365+vis;
   x=x*24*60*60;
-  mili=x*1000;
+  mili=x*TICKS_PER_SECOND;
 }
 
-uint64_t x= month2days[gps.date.month()-1];
+const uint64_t dias = month2days[gps.date.month()-1] + gps.date.day()-1;
+uint64_t horas = 24*dias + gps.time.hour();
+mili+= horas*60*60*TICKS_PER_SECOND;
+mili+= gps.time.minute()*60*TICKS_PER_SECOND;
+mili+=gps.time.second()*TICKS_PER_SECOND;
 
-x=x+gps.date.day()-1;
-x=x*24;
-
-horas=x+gps.time.hour();
-x=horas*60*60*1000;
-mili=mili+x;
-
-x=gps.time.minute()*60*1000;
-mili=mili+x;
-
-x=gps.time.second()*1000;
-mili=mili+x;
-
-uint64_t rawtime = mili;
 Serial.print("comprobacionseria next=");
-Serial.println(PriUint64<DEC>(rawtime,10));
+Serial.println(PriUint64<DEC>(mili,10));
 //Serial.println((long unsigned) rawtime);
 //Serial.println(PriUint64<DEC>(mili));
 //Serial.println((long unsigned)mili);
-return rawtime;
+return mili;
 }
