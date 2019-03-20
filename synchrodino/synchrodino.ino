@@ -216,7 +216,7 @@ double mes,dias,horas,minutos,segundos;
 uint64_t mili,c;
 
 
-// dias
+//los dias
 
 {
   uint64_t x=gps.date.year();
