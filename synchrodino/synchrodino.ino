@@ -25,7 +25,7 @@
 // End of Auto generated function prototypes by Atmel Studio
 // el primero es el Rxpin y el segundo es el Txpin
 
-const uint64_t TICKS_PER_SECOND = 10000;
+const uint64_t TICKS_PER_SECOND = 1000;
 
 TinyGPSPlus gps;
 // Message uC -> PC
@@ -34,7 +34,7 @@ struct Msg {
   uint8_t ID_sensor;
 };
 
-// Circular buffer:
+// Circular buffer: Codigo para crear una cola por si tubiera la necesidad de acumular mensajes
 // https://github.com/jlblancoc/claraquino/blob/master/libclaraquino/circular_buffer.h
 // GNU GPLv3
 template <class T, uint8_t SIZE> class circular_buffer {
@@ -99,21 +99,20 @@ public:
 }; // end class circular_buffer
 
 circular_buffer<Msg, 5> cola;
-
+//Maxima cola de 5
 // CONSTANTES
-uint32_t ticks = 0;
-uint32_t next_rmc = 0;
-uint32_t current_rmc = 0;
+uint64_t ticks = 0;
+uint64_t next_rmc = 0;
+uint64_t current_rmc = 0;
 //uint32_t mili;
 time_t rawtime;
-
+// funcion para pasar el la fecha y hora actual a UTC
 uint64_t gpsdatetounixB();
-//void pps();
-//void externa();
+
 
 // INTERRUCION TIMER 2
 ISR(TIMER2_COMPA_vect) { ticks++; }
-
+//Configuracion de la frecuencia de reloj
 void setup_timer2() {
   // CTC: WGM22:0 = 010b (2)
   // WGM2:0
@@ -133,7 +132,7 @@ void setup_timer2() {
   // (1<<n) = 2^n
   TIMSK2 |= (1 << OCIE2A);
 }
-
+//preparamos los pines de entrada y la velocidad de los puertos series en baudios por segundo
 void setup() {
   pinMode(2, INPUT_PULLUP);
   pinMode(3, INPUT_PULLUP);
@@ -144,9 +143,8 @@ void setup() {
   Serial1.begin(9600);
   attachInterrupt(digitalPinToInterrupt(2), pps, RISING);
   attachInterrupt(digitalPinToInterrupt(3), externa, RISING);
-  Serial.print("hola\n");
 }
-
+//programa principal
 void loop() {
   // put your main code here, to run repeatedly:
   // tronco del programa
@@ -154,23 +152,18 @@ void loop() {
     gps.encode(Serial1.read());
 
     if (gps.date.isUpdated()) {
-     uint64_t next_rmc = gpsdatetounixB();
-     Serial.print("comprobacionseria2 next=");
+     next_rmc = gpsdatetounixB();
+     //Serial.print("comprobacionseria2222222 next=");
      Serial.println(PriUint64<DEC>(next_rmc,10));
      //Serial.print("next=");
      //Serial.println(next_rmc);
     }
     if (cola.size() > 0) {
+      Serial.print("hora=");
       Msg msg;
       cola.pop(msg);
-      Serial.print("next=");
-      Serial.println(PriUint64<DEC>(next_rmc));
-      //Serial.println(next_rmc, 10);
-      Serial.print("current=");
-      Serial.println(PriUint64<DEC>(current_rmc));
-      //Serial.println(current_rmc, 10);
       Serial.print("ticks=");
-      Serial.println(ticks, 10);
+      Serial.println(PriUint64<DEC>(ticks,10));
       // madar puerto serie
       // envaira por serai msg
     }
@@ -184,25 +177,17 @@ void loop() {
 
 
 void pps() {
-  Serial.print("aaaaaaaaaaaaaaaaaaaaaa\n");
   if (next_rmc!=0){
     ticks = 0;
-    uint64_t current_rmc = next_rmc;
-    Serial.print("holapps\n");
-    Serial.print("aaaaaaaaaaaaaaaaaaaaaa\n");
+    current_rmc = next_rmc;
+    
   }
 }
 
 void externa() {
-  Serial.print("holaexterna\n");
   if (current_rmc != 0) {
-    Serial.print("holaexterna2\n");
-    //Serial.print("curent=");
-    //Serial.println(PriUint64<DEC>(current_rmc));
-    //Serial.println(current_rmc);
-    uint64_t hora = uint64_t(current_rmc)*TICKS_PER_SECOND +  ticks;
-    // encolar terminar
-    // ESTA ENCOLADO ¿?¿?¿?  AQUI AQUI
+    uint64_t hora = uint64_t(current_rmc) +  ticks;
+    // encolar el mensaje al terminar
     Msg msg;
     msg.timestamp = hora;
     msg.ID_sensor = 0;
@@ -212,13 +197,11 @@ void externa() {
 
 uint64_t gpsdatetounixB(){
 
-//                      0  1 2  3  4   5    6   7   8   9  10   11
+//dias de cada mes      0  1 2  3  4   5    6   7   8   9  10   11
 const int month2days[]={0,31,59,90,120,151,181,212,243,273,304,334};
 uint64_t mili;
 
-
-//los dias
-
+//Codigo para pasar fechar y hora a UTC
 {
   uint64_t x=gps.date.year();
   uint64_t vis=(x/4)-(1970/4);
@@ -233,10 +216,5 @@ mili+= horas*60*60*TICKS_PER_SECOND;
 mili+= gps.time.minute()*60*TICKS_PER_SECOND;
 mili+=gps.time.second()*TICKS_PER_SECOND;
 
-Serial.print("comprobacionseria next=");
-Serial.println(PriUint64<DEC>(mili,10));
-//Serial.println((long unsigned) rawtime);
-//Serial.println(PriUint64<DEC>(mili));
-//Serial.println((long unsigned)mili);
 return mili;
 }
